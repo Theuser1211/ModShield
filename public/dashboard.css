@@ -387,6 +387,28 @@ body.app {
   font-style: italic;
 }
 
+.btn-view-logs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: var(--orange);
+  background: transparent;
+  border: 1px solid rgba(217,57,0,0.25);
+  padding: 4px 10px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  letter-spacing: 0.02em;
+}
+.btn-view-logs:hover {
+  background: rgba(217,57,0,0.08);
+  border-color: rgba(217,57,0,0.5);
+}
+.btn-view-logs:active { transform: scale(0.96); }
+
 .panel-body {
   padding: 0;
 }
@@ -543,6 +565,318 @@ body.app {
   cursor: not-allowed;
   pointer-events: none;
 }
+
+/* ── Actions cell ────────────────────────────────────────────────────── */
+.actions-cell {
+  position: relative;
+  text-align: right;
+}
+
+/* Kebab button */
+.btn-actions {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-2);
+  background: transparent;
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  letter-spacing: 0.1em;
+  line-height: 1;
+}
+.btn-actions:hover {
+  background: var(--surface-2);
+  border-color: var(--border-hi);
+  color: var(--text-0);
+}
+.btn-actions:active { transform: scale(0.94); }
+
+/* Dropdown panel */
+.actions-dropdown {
+  position: fixed;
+  min-width: 180px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--r-md);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  z-index: 999;
+  overflow: hidden;
+  animation: dropdownIn 0.12s ease-out;
+}
+
+@keyframes dropdownIn {
+  from { opacity: 0; transform: translateY(-4px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 14px;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.1s;
+  text-align: left;
+}
+.dropdown-item:hover { background: var(--surface-3); }
+
+.dropdown-item.ban    { color: var(--red); }
+.dropdown-item.timeout{ color: var(--yellow); }
+.dropdown-item.reset  { color: var(--green); }
+
+.dropdown-item .icon {
+  width: 14px;
+  text-align: center;
+  flex-shrink: 0;
+  font-size: 0.8rem;
+}
+
+/* ── Timeout modal ───────────────────────────────────────────────────── */
+.timeout-modal {
+  position: fixed;
+  width: 280px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--r-lg);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+  z-index: 60;
+  padding: 16px;
+  animation: dropdownIn 0.15s ease-out;
+}
+
+.timeout-modal h4 {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--yellow);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.duration-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.duration-chip {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-1);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  padding: 5px 10px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.duration-chip:hover {
+  border-color: var(--yellow);
+  color: var(--yellow);
+  background: var(--yellow-dim);
+}
+.duration-chip.selected {
+  border-color: var(--yellow);
+  color: var(--yellow);
+  background: var(--yellow-dim);
+}
+
+.timeout-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.timeout-inputs label {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--text-3);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.timeout-inputs input {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--text-0);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  padding: 7px 10px;
+  border-radius: var(--r-sm);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.timeout-inputs input:focus {
+  border-color: var(--yellow);
+}
+.timeout-inputs input::placeholder {
+  color: var(--text-3);
+}
+
+.timeout-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-timeout-confirm {
+  flex: 1;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--base);
+  background: var(--yellow);
+  border: none;
+  padding: 8px 12px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: all 0.12s;
+  letter-spacing: 0.02em;
+}
+.btn-timeout-confirm:hover { background: #e0a82e; }
+.btn-timeout-confirm:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-timeout-cancel {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-2);
+  background: transparent;
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.btn-timeout-cancel:hover {
+  background: var(--surface-2);
+  color: var(--text-0);
+}
+
+/* Ban button (inline next to kebab) */
+.btn-ban {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--red);
+  background: transparent;
+  border: 1px solid rgba(248,81,73,0.25);
+  padding: 4px 10px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  letter-spacing: 0.02em;
+}
+.btn-ban:hover {
+  background: var(--red-dim);
+  border-color: rgba(248,81,73,0.5);
+}
+.btn-ban:active { transform: scale(0.96); }
+.btn-ban:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Activity badges for new actions */
+.activity-type.ban     { background: rgba(248,81,73,0.15); color: var(--red); }
+.activity-type.timeout { background: var(--yellow-dim);    color: var(--yellow); }
+
+/* ── Confirm modal ──────────────────────────────────────────────────── */
+.confirm-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: dropdownIn 0.12s ease-out;
+}
+
+.confirm-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+}
+
+.confirm-modal-box {
+  position: relative;
+  background: var(--surface-1);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--r-lg);
+  box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+  padding: 24px;
+  min-width: 320px;
+  max-width: 420px;
+}
+
+.confirm-modal-title {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-0);
+  margin-bottom: 8px;
+}
+
+.confirm-modal-message {
+  font-size: 0.78rem;
+  color: var(--text-2);
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+.confirm-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.btn-confirm-cancel {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-2);
+  background: transparent;
+  border: 1px solid var(--border);
+  padding: 8px 16px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.btn-confirm-cancel:hover {
+  background: var(--surface-2);
+  color: var(--text-0);
+}
+
+.btn-confirm-ok {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.btn-confirm-ok:hover { opacity: 0.9; }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    ACTIVITY FEED

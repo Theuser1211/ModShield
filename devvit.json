@@ -10,6 +10,9 @@
       },
       "dashboard": {
         "entry": "dashboard.html"
+      },
+      "logs": {
+        "entry": "logs.html"
       }
     }
   },

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <link rel="stylesheet" type="text/css" href="logs.css" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, width=device-width, height=device-height, user-scalable=0" />
+    <title>ModShield Activity Log</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  </head>
+  <body class="app">
+    <!-- Grain overlay -->
+    <div class="grain"></div>
+
+    <div class="logs-page">
+      <!-- Header -->
+      <header class="header">
+        <div class="header-left">
+          <div class="logo-block">
+            <div class="logo-shield">
+              <svg width="28" height="32" viewBox="0 0 28 32" fill="none">
+                <path d="M14 0L28 6V16C28 24 21 30 14 32C7 30 0 24 0 16V6L14 0Z" fill="url(#shield-grad)"/>
+                <path d="M14 4L24 8.5V16C24 22 19 27 14 28.5C9 27 4 22 4 16V8.5L14 4Z" fill="#0d1117"/>
+                <path d="M11 16L13 18L18 13" stroke="#d93900" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <defs>
+                  <linearGradient id="shield-grad" x1="0" y1="0" x2="28" y2="32">
+                    <stop stop-color="#ff6a3d"/>
+                    <stop offset="1" stop-color="#d93900"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+            <div class="header-text">
+              <h1 class="logo-title">ModShield</h1>
+              <p class="logo-subtitle">Activity Log</p>
+            </div>
+          </div>
+          <span class="version-tag">v1.0</span>
+        </div>
+        <div class="header-right">
+          <button class="btn-back" id="btn-back" title="Back to Dashboard">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M9 2L4 7L9 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Dashboard
+          </button>
+          <button class="btn-refresh" id="refresh-btn" title="Refresh data">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M12.5 7A5.5 5.5 0 1 1 7 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <path d="M7 0.5L9.5 1.5L7 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Refresh
+          </button>
+        </div>
+      </header>
+
+      <!-- Stats bar -->
+      <div class="stats-bar">
+        <div class="stat-chip">
+          <span class="stat-chip-value" id="total-entries">0</span>
+          <span class="stat-chip-label">Total Events</span>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="filter-bar">
+        <button class="filter-chip active" data-filter="all">All</button>
+        <button class="filter-chip" data-filter="report">Reports</button>
+        <button class="filter-chip" data-filter="ban">Bans</button>
+        <button class="filter-chip" data-filter="timeout">Timeouts</button>
+        <button class="filter-chip" data-filter="mute">Mutes</button>
+        <button class="filter-chip" data-filter="reset">Resets</button>
+        <button class="filter-chip" data-filter="alert">Alerts</button>
+      </div>
+
+      <!-- Activity Table -->
+      <section class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title">All Activity</h2>
+          <span class="panel-hint" id="showing-count">Showing 0 events</span>
+        </div>
+        <div class="panel-body">
+          <table class="data-table" id="logs-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Action</th>
+                <th>User</th>
+                <th>Details</th>
+                <th>Subreddit</th>
+              </tr>
+            </thead>
+            <tbody id="logs-tbody"></tbody>
+          </table>
+          <div class="empty-state hidden" id="logs-empty">
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+              <rect x="6" y="8" width="28" height="24" rx="3" stroke="#2d3544" stroke-width="2"/>
+              <line x1="12" y1="16" x2="28" y2="16" stroke="#2d3544" stroke-width="1.5"/>
+              <line x1="12" y1="22" x2="24" y2="22" stroke="#2d3544" stroke-width="1.5"/>
+              <line x1="12" y1="28" x2="20" y2="28" stroke="#2d3544" stroke-width="1.5"/>
+            </svg>
+            <h3>No Activity</h3>
+            <p>Events will appear here as they occur.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="footer">
+        <span class="footer-brand">ModShield</span>
+        <span class="footer-sep">/</span>
+        <span>Activity Log</span>
+        <span class="footer-right">
+          Auto-refresh: 30s
+          <span class="footer-sep">/</span>
+          Updated: <span id="last-updated">--:--:--</span>
+        </span>
+      </footer>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Loading -->
+    <div class="loading-overlay" id="loading-overlay">
+      <div class="loader">
+        <div class="loader-shield">
+          <svg width="36" height="40" viewBox="0 0 28 32" fill="none">
+            <path d="M14 0L28 6V16C28 24 21 30 14 32C7 30 0 24 0 16V6L14 0Z" fill="url(#shield-grad2)"/>
+            <path d="M14 4L24 8.5V16C24 22 19 27 14 28.5C9 27 4 22 4 16V8.5L14 4Z" fill="#0d1117"/>
+            <defs>
+              <linearGradient id="shield-grad2" x1="0" y1="0" x2="28" y2="32">
+                <stop stop-color="#ff6a3d"/>
+                <stop offset="1" stop-color="#d93900"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <span class="loader-text">Loading Logs</span>
+      </div>
+    </div>
+
+    <script type="module" src="logs.js" defer></script>
+  </body>
+</html>

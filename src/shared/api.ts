@@ -12,6 +12,9 @@
 export const ApiEndpoint = {
   Dashboard: "/api/dashboard",
   Reset: "/api/reset",
+  Ban: "/api/ban",
+  Timeout: "/api/timeout",
+  Logs: "/api/logs",
 } as const;
 
 export type ApiEndpoint = (typeof ApiEndpoint)[keyof typeof ApiEndpoint];
@@ -30,10 +33,10 @@ export interface FlaggedUser {
 
 export interface ActivityEntry {
   username: string;
-  contentType: "post" | "comment";
+  contentType: "post" | "comment" | "unknown";
   subredditName: string;
   timestamp: string;
-  action: "report" | "reset" | "mute";
+  action: "report" | "reset" | "mute" | "alert" | "ban" | "timeout";
 }
 
 // ─────────────────────────────────────────────
@@ -59,6 +62,38 @@ export interface ResetResponse {
   type: "reset";
   success: boolean;
   username: string;
+}
+
+export interface BanRequest {
+  username: string;
+  reason?: string;
+  note?: string;
+}
+
+export interface BanResponse {
+  type: "ban";
+  success: boolean;
+  username: string;
+}
+
+export interface TimeoutRequest {
+  username: string;
+  durationDays: number;
+  reason?: string;
+  note?: string;
+}
+
+export interface TimeoutResponse {
+  type: "timeout";
+  success: boolean;
+  username: string;
+  durationDays: number;
+}
+
+export interface LogsData {
+  type: "logs";
+  entries: ActivityEntry[];
+  total: number;
 }
 
 export interface ErrorResponse {

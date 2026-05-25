@@ -11,15 +11,20 @@
 
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { context, redis, reddit, settings } from "@devvit/web/server";
-import type { PartialJsonValue, TriggerResponse, UiResponse } from "@devvit/web/shared";
+import type { UiResponse } from "@devvit/web/shared";
 import {
   ApiEndpoint,
   type ActivityEntry,
+  type BanRequest,
+  type BanResponse,
   type DashboardData,
   type ErrorResponse,
   type FlaggedUser,
+  type LogsData,
   type ResetRequest,
   type ResetResponse,
+  type TimeoutRequest,
+  type TimeoutResponse,
 } from "../shared/api.ts";
 import { once } from "node:events";
 
@@ -37,7 +42,7 @@ const SETTING_TEST_MODE = "modshield_test_mode";
 
 const DEFAULT_VIOLATION_THRESHOLD = 3;
 const DASHBOARD_USER_LIMIT = 50;
-const ACTIVITY_LIMIT = 20;
+const ACTIVITY_LIMIT = 500;
 
 // ── Internal endpoint paths ───────────────────────────────────────────────
 
@@ -65,7 +70,7 @@ export async function serverOnRequest(
   } catch (err) {
     const msg = `server error; ${err instanceof Error ? err.stack : err}`;
     console.error(`[ModShield] ${msg}`);
-    writeJSON<ErrorResponse>(500, { error: msg, status: 500 }, rsp);
+    writeJSON(500, { error: msg, status: 500 }, rsp);
   }
 }
 
@@ -76,7 +81,7 @@ async function onRequest(
   const url = req.url;
 
   if (!url || url === "/") {
-    writeJSON<ErrorResponse>(404, { error: "not found", status: 404 }, rsp);
+    writeJSON(404, { error: "not found", status: 404 }, rsp);
     return;
   }
 
@@ -87,7 +92,7 @@ async function onRequest(
       const postPayload = await readJSON<Record<string, unknown>>(req);
       console.log("[ModShield] PostReport payload keys:", Object.keys(postPayload));
       await handlePostReport(postPayload);
-      writeJSON<TriggerResponse>(200, {}, rsp);
+      writeJSON(200, {}, rsp);
       return;
     }
     case EP_COMMENT_REPORT: {
@@ -95,25 +100,25 @@ async function onRequest(
       const commentPayload = await readJSON<Record<string, unknown>>(req);
       console.log("[ModShield] CommentReport payload keys:", Object.keys(commentPayload));
       await handleCommentReport(commentPayload);
-      writeJSON<TriggerResponse>(200, {}, rsp);
+      writeJSON(200, {}, rsp);
       return;
     }
     case EP_APP_INSTALL: {
       console.log("[ModShield] === AppInstall trigger fired ===");
       await handleAppInstall();
-      writeJSON<TriggerResponse>(200, {}, rsp);
+      writeJSON(200, {}, rsp);
       return;
     }
     case EP_MENU_CREATE: {
       console.log("[ModShield] === Menu create fired ===");
       const menuResult = await handleMenuCreate();
-      writeJSON<UiResponse>(200, menuResult, rsp);
+      writeJSON(200, menuResult, rsp);
       return;
     }
   }
 
   // ── Dashboard API endpoints ──────────────────────────────────────────
-  let body: DashboardData | ResetResponse | ErrorResponse;
+  let body: DashboardData | ResetResponse | BanResponse | TimeoutResponse | LogsData | ErrorResponse;
 
   switch (url) {
     case ApiEndpoint.Dashboard:
@@ -122,8 +127,17 @@ async function onRequest(
     case ApiEndpoint.Reset:
       body = await onReset(req);
       break;
+    case ApiEndpoint.Ban:
+      body = await onBan(req);
+      break;
+    case ApiEndpoint.Timeout:
+      body = await onTimeout(req);
+      break;
+    case ApiEndpoint.Logs:
+      body = await onLogs();
+      break;
     default:
-      writeJSON<ErrorResponse>(
+      writeJSON(
         404,
         { error: `not found: ${url}`, status: 404 },
         rsp
@@ -131,7 +145,8 @@ async function onRequest(
       return;
   }
 
-  writeJSON<PartialJsonValue>("status" in body ? body.status : 200, body, rsp);
+  const status = typeof body === "object" && body !== null && "status" in body ? (body as unknown as Record<string, unknown>).status as number : 200;
+  writeJSON(status, body, rsp);
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -174,9 +189,9 @@ async function resolveSettings(): Promise<ResolvedSettings> {
 
 async function appendActivity(entry: {
   username: string;
-  contentType: "post" | "comment";
+  contentType: "post" | "comment" | "unknown";
   subredditName: string;
-  action: "report" | "reset" | "mute";
+  action: "report" | "reset" | "mute" | "ban" | "timeout";
 }): Promise<void> {
   try {
     const timestamp = new Date().toISOString();
@@ -204,7 +219,7 @@ async function resolveUsername(
 
   if (authorIdOrName.startsWith("t2_")) {
     try {
-      const user = await reddit.getUserById(authorIdOrName);
+      const user = await reddit.getUserById(authorIdOrName as `t2_${string}`);
       return user?.username;
     } catch (err) {
       console.error(`[ModShield] Failed to resolve user ID ${authorIdOrName}:`, err);
@@ -457,10 +472,13 @@ async function handleMenuCreate(): Promise<UiResponse> {
 // ─────────────────────────────────────────────────────────────────────────
 
 async function onDashboard(): Promise<DashboardData> {
-  const zResults = await redis.zRange(SET_FLAGGED, 0, DASHBOARD_USER_LIMIT - 1, {
-    by: "rank",
-    reverse: true,
-  });
+  const [zResults, totalFlaggedCount] = await Promise.all([
+    redis.zRange(SET_FLAGGED, 0, DASHBOARD_USER_LIMIT - 1, {
+      by: "rank",
+      reverse: true,
+    }),
+    redis.zCard(SET_FLAGGED),
+  ]);
 
   const users: FlaggedUser[] = [];
   let totalViolations = 0;
@@ -508,7 +526,7 @@ async function onDashboard(): Promise<DashboardData> {
     type: "dashboard",
     users,
     totalViolations,
-    totalFlagged: users.length,
+    totalFlagged: totalFlaggedCount,
     threshold,
     testMode,
     enabled,
@@ -532,16 +550,11 @@ async function onReset(req: IncomingMessage): Promise<ResetResponse | ErrorRespo
     await redis.del(`${HASH_DETAIL_PREFIX}${username}`);
     await redis.del(`${KV_VIOL_PREFIX}${username}`);
 
-    const ts = Date.now();
-    await redis.zAdd(SET_ACTIVITY, {
-      member: JSON.stringify({
-        username,
-        contentType: "post",
-        subredditName: "",
-        timestamp: new Date().toISOString(),
-        action: "reset",
-      } satisfies ActivityEntry),
-      score: ts,
+    await appendActivity({
+      username,
+      contentType: "unknown",
+      subredditName: "",
+      action: "reset",
     });
 
     console.log(`[ModShield] Reset violations for u/${username}`);
@@ -553,12 +566,132 @@ async function onReset(req: IncomingMessage): Promise<ResetResponse | ErrorRespo
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// Ban handler (permanent)
+// ─────────────────────────────────────────────────────────────────────────
+
+async function onBan(req: IncomingMessage): Promise<BanResponse | ErrorResponse> {
+  const { username, reason, note } = await readJSON<BanRequest>(req);
+
+  if (!username) {
+    return { error: "username is required", status: 400 };
+  }
+
+  const subredditName = context.subredditName;
+  if (!subredditName) {
+    return { error: "subredditName not available in context", status: 500 };
+  }
+
+  try {
+    await reddit.banUser({
+      username,
+      subredditName,
+      reason: reason ?? "ModShield: repeat offender",
+      note: note ?? "Banned via ModShield dashboard",
+      duration: 0,
+    });
+
+    // Clean up tracking data.
+    await redis.zRem(SET_FLAGGED, [username]);
+    await redis.del(`${HASH_DETAIL_PREFIX}${username}`);
+    await redis.del(`${KV_VIOL_PREFIX}${username}`);
+
+    await appendActivity({
+      username,
+      contentType: "unknown",
+      subredditName,
+      action: "ban",
+    });
+
+    console.log(`[ModShield] Permanently banned u/${username} from r/${subredditName}`);
+    return { type: "ban", success: true, username };
+  } catch (err) {
+    console.error(`[ModShield] Failed to ban u/${username}:`, err);
+    return { error: `Failed to ban u/${username}: ${err instanceof Error ? err.message : String(err)}`, status: 500 };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Timeout handler (temporary ban)
+// ─────────────────────────────────────────────────────────────────────────
+
+async function onTimeout(req: IncomingMessage): Promise<TimeoutResponse | ErrorResponse> {
+  const { username, durationDays, reason, note } = await readJSON<TimeoutRequest>(req);
+
+  if (!username) {
+    return { error: "username is required", status: 400 };
+  }
+  if (!durationDays || durationDays < 1 || durationDays > 999) {
+    return { error: "durationDays must be between 1 and 999", status: 400 };
+  }
+
+  const subredditName = context.subredditName;
+  if (!subredditName) {
+    return { error: "subredditName not available in context", status: 500 };
+  }
+
+  try {
+    await reddit.banUser({
+      username,
+      subredditName,
+      duration: durationDays,
+      reason: reason ?? `ModShield: ${durationDays}-day timeout`,
+      note: note ?? `Timed out via ModShield dashboard for ${durationDays} days`,
+    });
+
+    // Clean up tracking data.
+    await redis.zRem(SET_FLAGGED, [username]);
+    await redis.del(`${HASH_DETAIL_PREFIX}${username}`);
+    await redis.del(`${KV_VIOL_PREFIX}${username}`);
+
+    await appendActivity({
+      username,
+      contentType: "unknown",
+      subredditName,
+      action: "timeout",
+    });
+
+    console.log(`[ModShield] Timed out u/${username} for ${durationDays} days in r/${subredditName}`);
+    return { type: "timeout", success: true, username, durationDays };
+  } catch (err) {
+    console.error(`[ModShield] Failed to timeout u/${username}:`, err);
+    return { error: `Failed to timeout u/${username}: ${err instanceof Error ? err.message : String(err)}`, status: 500 };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Full logs handler
+// ─────────────────────────────────────────────────────────────────────────
+
+async function onLogs(): Promise<LogsData> {
+  const rawEntries = await redis.zRange(SET_ACTIVITY, 0, ACTIVITY_LIMIT - 1, {
+    by: "rank",
+    reverse: true,
+  });
+
+  const entries: ActivityEntry[] = rawEntries
+    .map((e) => {
+      try {
+        return JSON.parse(e.member) as ActivityEntry;
+      } catch {
+        return null;
+      }
+    })
+    .filter((e): e is ActivityEntry => e !== null);
+
+  return {
+    type: "logs",
+    entries,
+    total: entries.length,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────
 
-function writeJSON<T extends PartialJsonValue>(
+function writeJSON(
   status: number,
-  json: Readonly<T>,
+  json: unknown,
   rsp: ServerResponse,
 ): void {
   const body = JSON.stringify(json);
