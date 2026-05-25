@@ -1,0 +1,43 @@
+{
+  "$schema": "https://developers.reddit.com/schema/config-file.v1.json",
+  "name": "mod-shield-plus",
+  "post": {
+    "dir": "public",
+    "entrypoints": {
+      "default": {
+        "inline": true,
+        "entry": "preview.html"
+      },
+      "dashboard": {
+        "entry": "dashboard.html"
+      }
+    }
+  },
+  "server": {
+    "dir": "dist/server",
+    "entry": "index.js"
+  },
+  "menu": {
+    "items": [
+      {
+        "label": "Open ModShield Dashboard",
+        "description": "View flagged users and violation reports",
+        "location": "subreddit",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/post-create"
+      }
+    ]
+  },
+  "triggers": {
+    "onPostReport": "/internal/on-post-report",
+    "onCommentReport": "/internal/on-comment-report",
+    "onAppInstall": "/internal/on-app-install"
+  },
+  "scripts": {
+    "dev": "node --experimental-strip-types ./tools/build.ts --watch",
+    "build": "node --experimental-strip-types ./tools/build.ts --minify"
+  },
+  "dev": {
+    "subreddit": "mod_shield_plus_dev"
+  }
+}

@@ -1,0 +1,13 @@
+name: mod-shield-plus
+version: 0.1.0
+bundled: true
+entrypoint: src/main.ts
+permissions:
+  - identity
+  - modmail
+  - storage
+  - redis
+triggers:
+  - PostReport
+  - CommentReport
+  - AppInstall

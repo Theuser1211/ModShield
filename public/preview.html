@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <link rel="stylesheet" type="text/css" href="preview.css" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, width=device-width, height=device-height, user-scalable=0" />
+    <title>ModShield</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  </head>
+  <body class="app">
+    <div class="grain"></div>
+    <div class="preview-card">
+      <div class="preview-header">
+        <svg width="24" height="28" viewBox="0 0 28 32" fill="none">
+          <path d="M14 0L28 6V16C28 24 21 30 14 32C7 30 0 24 0 16V6L14 0Z" fill="url(#sg)"/>
+          <path d="M14 4L24 8.5V16C24 22 19 27 14 28.5C9 27 4 22 4 16V8.5L14 4Z" fill="#0d1117"/>
+          <path d="M11 16L13 18L18 13" stroke="#d93900" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <defs><linearGradient id="sg" x1="0" y1="0" x2="28" y2="32"><stop stop-color="#ff6a3d"/><stop offset="1" stop-color="#d93900"/></linearGradient></defs>
+        </svg>
+        <div class="preview-titles">
+          <h1 class="preview-title">ModShield</h1>
+          <p class="preview-subtitle">Repeat Offender Tracker</p>
+        </div>
+      </div>
+      <div class="preview-stats">
+        <div class="preview-stat">
+          <span class="stat-num" id="stat-flagged">0</span>
+          <span class="stat-label">flagged</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="preview-stat">
+          <span class="stat-num" id="stat-violations">0</span>
+          <span class="stat-label">violations</span>
+        </div>
+      </div>
+      <div class="preview-tags">
+        <span class="preview-tag">Modmail</span>
+        <span class="preview-tag">Auto-Mute</span>
+        <span class="preview-tag">Activity Log</span>
+      </div>
+      <button class="preview-btn" id="btn-open">Open Dashboard</button>
+    </div>
+    <script type="module" src="preview.js" defer></script>
+  </body>
+</html>
