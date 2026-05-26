@@ -387,27 +387,27 @@ body.app {
   font-style: italic;
 }
 
-.btn-view-logs {
+.btn-clear-logs {
   display: flex;
   align-items: center;
   gap: 4px;
   font-family: var(--mono);
   font-size: 0.62rem;
   font-weight: 600;
-  color: var(--orange);
+  color: var(--red);
   background: transparent;
-  border: 1px solid rgba(217,57,0,0.25);
+  border: 1px solid rgba(220,50,50,0.25);
   padding: 4px 10px;
   border-radius: var(--r-sm);
   cursor: pointer;
   transition: all 0.15s ease;
   letter-spacing: 0.02em;
 }
-.btn-view-logs:hover {
-  background: rgba(217,57,0,0.08);
-  border-color: rgba(217,57,0,0.5);
+.btn-clear-logs:hover {
+  background: rgba(220,50,50,0.08);
+  border-color: rgba(220,50,50,0.5);
 }
-.btn-view-logs:active { transform: scale(0.96); }
+.btn-clear-logs:active { transform: scale(0.96); }
 
 .panel-body {
   padding: 0;

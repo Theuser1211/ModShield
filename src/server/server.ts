@@ -17,6 +17,7 @@ import {
   type ActivityEntry,
   type BanRequest,
   type BanResponse,
+  type ClearLogsResponse,
   type DashboardData,
   type ErrorResponse,
   type FlaggedUser,
@@ -118,7 +119,7 @@ async function onRequest(
   }
 
   // ── Dashboard API endpoints ──────────────────────────────────────────
-  let body: DashboardData | ResetResponse | BanResponse | TimeoutResponse | LogsData | ErrorResponse;
+  let body: DashboardData | ResetResponse | BanResponse | TimeoutResponse | LogsData | ClearLogsResponse | ErrorResponse;
 
   switch (url) {
     case ApiEndpoint.Dashboard:
@@ -135,6 +136,9 @@ async function onRequest(
       break;
     case ApiEndpoint.Logs:
       body = await onLogs();
+      break;
+    case ApiEndpoint.ClearLogs:
+      body = await onClearLogs();
       break;
     default:
       writeJSON(
@@ -683,6 +687,18 @@ async function onLogs(): Promise<LogsData> {
     entries,
     total: entries.length,
   };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Clear logs handler
+// ─────────────────────────────────────────────────────────────────────────
+
+async function onClearLogs(): Promise<ClearLogsResponse> {
+  const count = await redis.zCard(SET_ACTIVITY);
+  if (count > 0) {
+    await redis.del(SET_ACTIVITY);
+  }
+  return { type: "clear-logs", success: true, cleared: count };
 }
 
 // ─────────────────────────────────────────────────────────────────────────

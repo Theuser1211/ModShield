@@ -15,6 +15,7 @@ export const ApiEndpoint = {
   Ban: "/api/ban",
   Timeout: "/api/timeout",
   Logs: "/api/logs",
+  ClearLogs: "/api/clear-logs",
 } as const;
 
 export type ApiEndpoint = (typeof ApiEndpoint)[keyof typeof ApiEndpoint];
@@ -94,6 +95,12 @@ export interface LogsData {
   type: "logs";
   entries: ActivityEntry[];
   total: number;
+}
+
+export interface ClearLogsResponse {
+  type: "clear-logs";
+  success: boolean;
+  cleared: number;
 }
 
 export interface ErrorResponse {

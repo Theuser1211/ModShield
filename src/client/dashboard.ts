@@ -8,7 +8,7 @@
 
 import type { DashboardData, ActivityEntry } from "../shared/api.ts";
 import { ApiEndpoint } from "../shared/api.ts";
-import { requestExpandedMode } from "@devvit/web/client";
+
 
 // ── DOM refs ──────────────────────────────────────────────────────────────
 
@@ -500,13 +500,28 @@ $refreshBtn.addEventListener("click", async () => {
   $refreshBtn.disabled = false;
 });
 
-// ── View Full Logs button ─────────────────────────────────────────────────
+// ── Clear Logs button ───────────────────────────────────────────────────
 
-const $viewLogsBtn = document.getElementById("btn-view-logs");
-if ($viewLogsBtn) {
-  $viewLogsBtn.addEventListener("click", (e: Event) => {
+const $clearLogsBtn = document.getElementById("btn-clear-logs");
+if ($clearLogsBtn) {
+  $clearLogsBtn.addEventListener("click", async (e: Event) => {
     e.stopPropagation();
-    requestExpandedMode(e as MouseEvent, "logs");
+    const ok = await showConfirmModal(
+      "Clear Logs",
+      "Delete all activity log entries? This cannot be undone.",
+      "Clear All",
+      "var(--red)"
+    );
+    if (!ok) return;
+    try {
+      const res = await fetch(ApiEndpoint.ClearLogs, { method: "POST" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      showToast("Activity logs cleared", "success");
+      await fetchDashboard();
+    } catch (err) {
+      console.error("[ModShield] Clear logs failed:", err);
+      showToast("Failed to clear logs", "error");
+    }
   });
 }
 
